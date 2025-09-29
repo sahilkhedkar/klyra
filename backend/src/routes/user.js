@@ -39,33 +39,31 @@ userRouter.post("/signup" , async (req,res) => {
     })
 })
 
-userRouter.post("/signin" , async (req,res) => {
+userRouter.post("/signin", async (req, res) => {
+    const { username, password } = req.body;
 
-    const {username , password} = req.body;
+    const response = await User.findOne({ username });
 
-    const response = User.findOne({
-        username
-    })
-
-    if(!response) {
-        res.json({
-            msg: "User Doesn't exists"
-        })
+    if (!response) {
+        return res.status(404).json({
+            msg: "User doesn't exist"
+        });
     }
 
-    const passwordMatch = await bcrypt.compare(password , response.password)
+    const passwordMatch = await bcrypt.compare(password, response.password);
 
-    if(passwordMatch) {
-        const token = jwt.sign({
-            id: response._id.toString()
-        },process.env.JWT_SECRET)
+    if (passwordMatch) {
+        const token = jwt.sign(
+            { id: response._id.toString() },
+            process.env.JWT_SECRET
+        );
 
-        res.json({
+        return res.json({
             token
         })
     } else {
-        res.status(403).json({
-            msg : "Incorrect Creds"
-        })
+        return res.status(403).json({
+            msg: "Incorrect credentials"
+        });
     }
-})
+});
