@@ -6,13 +6,14 @@ import bcrypt from "bcrypt"
 
 export const userRouter = Router();
 
-userRouter.post("/signup" , async (req,res) => {
-    const requiredBody = z.object({
+ const requiredBody = z.object({
         username: z.string().min(3).max(30),
         password: z.string().min(8, "Password must be at least 8 characters long"),
         firstName: z.string().min(3).max(50),
         lastName: z.string().min(3).max(50)
     })
+
+userRouter.post("/signup" , async (req,res) => {
 
     const parsedDatawithSuccess = requiredBody.safeParse(req.body)
 
@@ -25,6 +26,16 @@ userRouter.post("/signup" , async (req,res) => {
     }
 
     const {username , password , firstName , lastName} = req.body;
+
+    const existiningUser = User.findOne({
+        username
+    })
+
+    if(existiningUser) {
+        return res.status(411).json({
+            msg: "User already exists"
+        })
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -40,6 +51,17 @@ userRouter.post("/signup" , async (req,res) => {
 })
 
 userRouter.post("/signin", async (req, res) => {
+
+       const parsedDatawithSuccess = requiredBody.safeParse(req.body)
+
+    if(!parsedDatawithSuccess.success) {
+        res.json({
+            msg: "Incorrect Format",
+            error: parsedDatawithSuccess.error
+        })
+        return
+    }
+
     const { username, password } = req.body;
 
     const response = await User.findOne({ username });
