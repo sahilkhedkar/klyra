@@ -3,6 +3,7 @@ import z from 'zod';
 import jwt from "jsonwebtoken"
 import { User } from "../db/db";
 import bcrypt from "bcrypt"
+import { authMiddleware } from "../middleware/middleware";
 
 export const userRouter = Router();
 
@@ -89,3 +90,56 @@ userRouter.post("/signin", async (req, res) => {
         });
     }
 });
+
+userRouter.put('/update' , authMiddleware , async (req,res) => {
+  const parsedDatawithSuccess = requiredBody.safeParse(req.body)
+
+    if(!parsedDatawithSuccess.success) {
+        res.json({
+            msg: "Incorrect Format",
+            error: parsedDatawithSuccess.error
+        })
+        return
+    }
+    
+    const updateUser = await User.updateOne({
+        _id: req.userId
+    },req.body)
+
+    if(updateUser) {
+        return res.status(200).json({
+            msg: "Updated Successfully"
+        })
+    } else {
+        return res.status(403).json({
+            msg: "Error while updating"
+        })
+    }
+
+
+});
+
+userRouter.get("/bulk" , async (req,res) => {
+    const filter = req.query.filter || ""
+
+       const users = await User.find({
+       $or: [{
+            firstName: {
+                "$regex": filter
+            }
+        },{
+            lastName: {
+                "$regex": filter
+            }
+       }]
+    })
+
+    res.json({
+        user: users.map(user => ({
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            _id: user._id
+        }))
+    })
+})
