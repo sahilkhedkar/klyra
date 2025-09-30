@@ -1,7 +1,7 @@
 import { Router } from "express";
 import z from 'zod';
 import jwt from "jsonwebtoken"
-import { User } from "../db/db";
+import { Account, User } from "../db/db";
 import bcrypt from "bcrypt"
 import { authMiddleware } from "../middleware/middleware";
 
@@ -40,11 +40,20 @@ userRouter.post("/signup" , async (req,res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await User.create({
+    const user = await User.create({
         username: username,
         password: hashedPassword,
         firstName: firstName,
         lastName: lastName
+    })
+
+    const userId = user._id
+
+    //Creating a new Account
+
+    await Account.create({
+        userId,
+        balance: 1 + Math.random() * 10000
     })
     res.status(200).json({
         msg: "SignedUp suceesfully"
