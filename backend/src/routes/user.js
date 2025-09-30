@@ -28,7 +28,7 @@ userRouter.post("/signup" , async (req,res) => {
 
     const {username , password , firstName , lastName} = req.body;
 
-    const existiningUser = User.findOne({
+    const existiningUser = await User.findOne({
         username
     })
 
@@ -62,16 +62,6 @@ userRouter.post("/signup" , async (req,res) => {
 
 userRouter.post("/signin", async (req, res) => {
 
-    const parsedDatawithSuccess = requiredBody.safeParse(req.body)
-
-    if(!parsedDatawithSuccess.success) {
-        res.json({
-            msg: "Incorrect Format",
-            error: parsedDatawithSuccess.error
-        })
-        return
-    }
-
     const { username, password } = req.body;
 
     const response = await User.findOne({ username });
@@ -86,7 +76,7 @@ userRouter.post("/signin", async (req, res) => {
 
     if (passwordMatch) {
         const token = jwt.sign(
-            { id: response._id.toString() },
+            { userId: response._id.toString() },
             process.env.JWT_SECRET
         );
 
@@ -115,14 +105,10 @@ userRouter.put('/update' , authMiddleware , async (req,res) => {
         _id: req.userId
     },req.body)
 
-    if(updateUser) {
-        return res.status(200).json({
-            msg: "Updated Successfully"
-        })
+    if (updateUser.modifiedCount > 0) {
+    return res.status(200).json({ msg: "Updated Successfully" });
     } else {
-        return res.status(403).json({
-            msg: "Error while updating"
-        })
+    return res.status(400).json({ msg: "No changes made" });
     }
 
 
