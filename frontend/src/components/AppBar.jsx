@@ -22,18 +22,18 @@ export const AppBar = () => {
         Klyra
       </div>
 
-      <div className="flex items-center space-x-3">
-        <div className="text-gray-300 hover:text-white cursor-pointer transition">
+      <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="hidden sm:block text-gray-300 hover:text-white cursor-pointer transition">
           Hello
         </div>
         <div
-          className="rounded-full h-10 w-10 bg-emerald-600 flex justify-center items-center text-white font-bold shadow hover:shadow-lg transition transform hover:scale-105 cursor-pointer"
+          className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-emerald-600 flex justify-center items-center text-white font-bold shadow hover:shadow-lg transition transform hover:scale-105 cursor-pointer"
           onClick={() => navigate("/profile")}
         >
           {userInitial}
         </div>
         <button
-          className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded transition"
+          className="px-2 py-1 sm:px-3 text-xs sm:text-sm bg-red-600 hover:bg-red-500 text-white rounded transition"
           onClick={() => {
             localStorage.removeItem("token");
             localStorage.removeItem("user");

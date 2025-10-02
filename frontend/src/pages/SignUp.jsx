@@ -40,7 +40,7 @@ export const SignUp = () => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-white/5 backdrop-blur-md rounded-xl w-full max-w-md text-center p-4 sm:p-8 border border-white/10 shadow-2xl mx-4"
+          className="bg-white/5 backdrop-blur-md rounded-xl w-full max-w-md text-center p-3 sm:p-8 border border-white/10 shadow-2xl mx-4"
         >
           <motion.div
             initial={{ y: -20, opacity: 0 }}
