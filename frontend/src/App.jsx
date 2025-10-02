@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { Home } from "./pages/Home";
@@ -12,12 +12,13 @@ import { useAuth } from "./context/AuthContext";
 function App() {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!loading && isAuthenticated && (location.pathname === "/" || location.pathname === "/signin" || location.pathname === "/signup")) {
       navigate("/dashboard");
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, location.pathname]);
 
   if (loading) {
     return <div>Loading...</div>; // Or a proper loading component
