@@ -1,6 +1,6 @@
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Home } from "./pages/Home";
 import { SignUp } from "./pages/SignUp";
 import { Signin } from "./pages/Signin";
@@ -13,10 +13,12 @@ function App() {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const initialLoad = useRef(true);
 
   useEffect(() => {
-    if (!loading && isAuthenticated && (location.pathname === "/" || location.pathname === "/signin" || location.pathname === "/signup")) {
+    if (initialLoad.current && !loading && isAuthenticated && (location.pathname === "/" || location.pathname === "/signin" || location.pathname === "/signup")) {
       navigate("/dashboard");
+      initialLoad.current = false;
     }
   }, [isAuthenticated, loading, navigate, location.pathname]);
 
