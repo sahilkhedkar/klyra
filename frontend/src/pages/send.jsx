@@ -43,7 +43,7 @@ export const Send = () => {
                             onClick={async () => {
                                 try {
                                     await axios.post(
-                                        "http://localhost:8000/api/v1/account/transfer",
+                                        "https://paytm-b2c4.onrender.com/api/v1/account/transfer",
                                         {
                                             to: id,
                                             amount: parseFloat(amount),

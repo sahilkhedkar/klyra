@@ -81,14 +81,14 @@ export const Signin = () => {
           >
             <Button onClick={async () => {
               try {
-                const response = await axios.post("http://localhost:8000/api/v1/user/signin", {
+                const response = await axios.post("https://paytm-b2c4.onrender.com/api/v1/user/signin", {
                   username,
                   password
                 });
                 localStorage.setItem("token", response.data.token);
 
                 // Fetch user data
-                const userRes = await axios.get("http://localhost:8000/api/v1/user/me", {
+                const userRes = await axios.get("https://paytm-b2c4.onrender.com/api/v1/user/me", {
                   headers: { Authorization: "Bearer " + response.data.token },
                 });
                 localStorage.setItem("user", JSON.stringify(userRes.data));

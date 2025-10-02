@@ -105,7 +105,7 @@ export const SignUp = () => {
                 return;
               }
               try {
-                await axios.post("http://localhost:8000/api/v1/user/signup", {
+                await axios.post("https://paytm-b2c4.onrender.com/api/v1/user/signup", {
                   username,
                   firstName,
                   lastName,

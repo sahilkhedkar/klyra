@@ -12,13 +12,13 @@ export const Profile = () => {
     const fetchData = async () => {
       try {
         const [balanceRes, historyRes, userRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/v1/account/balance", {
+          axios.get("https://paytm-b2c4.onrender.com/api/v1/account/balance", {
             headers: { Authorization: "Bearer " + localStorage.getItem("token") },
           }),
-          axios.get("http://localhost:8000/api/v1/account/history", {
+          axios.get("https://paytm-b2c4.onrender.com/api/v1/account/history", {
             headers: { Authorization: "Bearer " + localStorage.getItem("token") },
           }),
-          axios.get("http://localhost:8000/api/v1/user/me", {
+          axios.get("https://paytm-b2c4.onrender.com/api/v1/user/me", {
             headers: { Authorization: "Bearer " + localStorage.getItem("token") },
           })
         ]);
