@@ -8,10 +8,12 @@ import { InputBox } from "../components/InputBox";
 import { SubHeading } from "../components/SubHeading";
 import { SuccessModal } from "../components/SuccessModal";
 import { ErrorModal } from "../components/ErrorModal";
+import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 
 export const Signin = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showModal, setShowModal] = useState(false)
@@ -85,13 +87,13 @@ export const Signin = () => {
                   username,
                   password
                 });
-                localStorage.setItem("token", response.data.token);
 
                 // Fetch user data
                 const userRes = await axios.get("https://paytm-b2c4.onrender.com/api/v1/user/me", {
                   headers: { Authorization: "Bearer " + response.data.token },
                 });
-                localStorage.setItem("user", JSON.stringify(userRes.data));
+
+                login(response.data.token, userRes.data);
 
                 setShowModal(true);
               } catch (error) {
