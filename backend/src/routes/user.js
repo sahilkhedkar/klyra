@@ -77,7 +77,8 @@ userRouter.post("/signin", async (req, res) => {
     if (passwordMatch) {
         const token = jwt.sign(
             { userId: response._id.toString() },
-            process.env.JWT_SECRET
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
         );
 
         return res.json({
@@ -138,3 +139,17 @@ userRouter.get("/bulk" , async (req,res) => {
         }))
     })
 })
+
+userRouter.get("/me", authMiddleware, async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(404).json({ msg: "User not found" });
+    }
+
+    res.json({
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName
+    });
+});

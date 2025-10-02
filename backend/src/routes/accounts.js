@@ -1,72 +1,89 @@
-import { Router } from "express";
-import { Account, User } from "../db/db";  // ✅ include User
-import { authMiddleware } from "../middleware/middleware";
+import {Router} from "express"
+import { Account, Transaction } from "../db/db";
 import mongoose from "mongoose";
+import { authMiddleware } from "../middleware/middleware";
 
-export const accountRouter = Router();
+export const accountRouter = Router()
 
 accountRouter.get("/balance", authMiddleware, async (req, res) => {
-    try {
-        const account = await Account.findOne({ userId: req.userId });
+    const account = await Account.findOne({
+        userId: req.userId
+    });
 
-        if (account) {
-            res.status(200).json({ balance: account.balance });
-        } else {
-            res.status(404).json({ msg: "Account doesn't exist" });
-        }
-    } catch (error) {
-        res.status(500).json({ msg: "Something went wrong", error: error.message });
-    }
+    res.json({
+        balance: account.balance
+    })
 });
 
-accountRouter.post("/transfer", authMiddleware, async (req, res) => {
-   accountRouter.post("/transfer", authMiddleware, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+accountRouter.post("/transfer", authMiddleware, async (req,res) => {
+    const session = await mongoose.startSession();
 
-  const { amount, to } = req.body; // 'to' = recipient username
+    session.startTransaction();
+    const { amount, to } = req.body;
 
-  try {
-    // Sender's account
-    const senderAccount = await Account.findOne({ userId: req.userId }).session(session);
-    if (!senderAccount || senderAccount.balance < amount) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Insufficient balance" });
+    const toUserId = new mongoose.Types.ObjectId(to);
+
+    if (toUserId.equals(req.userId)) {
+        await session.abortTransaction();
+        return res.status(400).json({
+            message: "Cannot transfer to yourself"
+        });
     }
 
-    // Recipient user
-    const recipientUser = await User.findOne({ to }).session(session);
-    if (!recipientUser) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Recipient user not found" });
+    // Fetch the accounts within the transaction
+    const account = await Account.findOne({ userId: req.userId }).session(session);
+
+    if (!account || account.balance < amount) {
+        await session.abortTransaction();
+        return res.status(400).json({
+            message: "Insufficient balance"
+        });
     }
 
-    // Prevent sending money to self
-    if (recipientUser._id.equals(req.userId)) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Cannot transfer to yourself" });
-    }
+    const toAccount = await Account.findOne({ userId: toUserId }).session(session);
 
-    // Recipient account
-    const recipientAccount = await Account.findOne({ userId: recipientUser._id }).session(session);
-    if (!recipientAccount) {
-      await session.abortTransaction();
-      return res.status(400).json({ message: "Recipient account not found" });
+    if (!toAccount) {
+        await session.abortTransaction();
+        return res.status(400).json({
+            message: "Invalid account"
+        });
     }
 
     // Perform the transfer
     await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
-    await Account.updateOne({ userId: recipientUser._id }, { $inc: { balance: amount } }).session(session);
+    await Account.updateOne({ userId: toUserId }, { $inc: { balance: amount } }).session(session);
 
+    // Commit the transaction
     await session.commitTransaction();
-    return res.status(200).json({ message: "Transfer successful" });
 
-  } catch (error) {
-    await session.abortTransaction();
-    return res.status(500).json({ message: "Something went wrong", error: error.message });
-  } finally {
-    session.endSession();
-  }
+    // Save transaction record
+    await Transaction.create({
+        fromUserId: req.userId,
+        toUserId: toUserId,
+        amount: amount
+    });
+res.json({
+    message: "Transfer successful"
+});
+})
+
+accountRouter.get("/history", authMiddleware, async (req, res) => {
+const transactions = await Transaction.find({
+    $or: [
+        { fromUserId: req.userId },
+        { toUserId: req.userId }
+    ]
+}).populate('fromUserId', 'firstName lastName').populate('toUserId', 'firstName lastName').sort({ timestamp: -1 });
+
+res.json({
+    transactions: transactions.map(t => ({
+        id: t._id,
+        amount: t.amount,
+        from: `${t.fromUserId.firstName} ${t.fromUserId.lastName}`,
+        to: `${t.toUserId.firstName} ${t.toUserId.lastName}`,
+        timestamp: t.timestamp,
+        type: t.fromUserId._id.toString() === req.userId ? 'sent' : 'received'
+    }))
 });
 });
 

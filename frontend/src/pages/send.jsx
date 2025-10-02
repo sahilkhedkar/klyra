@@ -1,111 +1,85 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Button } from "../components/Button";
+import { Heading } from "../components/Heading";
+import { InputBox } from "../components/InputBox";
+import { SuccessModal } from "../components/SuccessModal";
+import { ErrorModal } from "../components/ErrorModal";
 import axios from "axios";
 
 export const Send = () => {
-  const [searchParams] = useSearchParams();
-  const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
+    const [searchParams] = useSearchParams();
+    const id = searchParams.get("id");
+    const name = searchParams.get("name");
+    const [amount, setAmount] = useState(0);
+    const [showModal, setShowModal] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const navigate = useNavigate();
 
-  const name = searchParams.get("name"); // recipient username
-  const id = searchParams.get("id"); // recipient id (optional)
-  const avatarInitial = name ? name[0].toUpperCase() : "R";
-
-  const handleTransfer = async () => {
-  if (!amount || Number(amount) <= 0) {
-    setError("Please enter a valid amount");
-    return;
-  }
-
-  setLoading(true);
-  setError(null);
-  setMessage(null);
-
-  try {
-    const token = localStorage.getItem("token");
-
-    const response = await axios.post(
-      "http://localhost:8000/api/v1/account/transfer",
-      { to: name, amount: Number(amount) },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    setMessage(response.data.message); // ✅ now response exists
-    setAmount(""); // clear input
-  } catch (err) {
-    setError(err.response?.data?.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-black via-gray-900 to-black relative overflow-hidden">
-      <div className="w-full max-w-md p-6">
-        <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl shadow-2xl p-6 space-y-6 transform transition hover:scale-105">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <h2 className="text-3xl font-bold text-white">Send Money</h2>
-            <div className="w-16 h-1 mx-auto bg-emerald-500 rounded-full" />
-          </div>
-
-          {/* Recipient Info */}
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center shadow-lg">
-              <span className="text-2xl text-white font-bold">
-                {avatarInitial}
-              </span>
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.5 }}
+            className="bg-gradient-to-br from-black via-zinc-900 to-black relative overflow-hidden h-screen flex justify-center"
+        >
+            <div className="flex flex-col justify-center">
+                <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
+                    <Heading label={"Send Money"} />
+                    <div className="text-gray-700 text-lg font-semibold mb-4">
+                        Sending to: {name}
+                    </div>
+                    <InputBox
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        label={"Amount (in Rs)"}
+                        type="number"
+                    />
+                    <div className="pt-4">
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    await axios.post(
+                                        "http://localhost:8000/api/v1/account/transfer",
+                                        {
+                                            to: id,
+                                            amount: parseFloat(amount),
+                                        },
+                                        {
+                                            headers: {
+                                                Authorization: "Bearer " + localStorage.getItem("token"),
+                                            },
+                                        }
+                                    );
+                                    setShowModal(true);
+                                } catch (error) {
+                                    setErrorMessage("Transfer failed: " + (error.response?.data?.message || error.message));
+                                    setShowErrorModal(true);
+                                }
+                            }}
+                            label={"Initiate Transfer"}
+                        />
+                    </div>
+                </div>
             </div>
-            <h3 className="text-2xl font-semibold text-white">{name}</h3>
-          </div>
-
-          {/* Form */}
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <label
-                htmlFor="amount"
-                className="text-sm font-medium text-gray-200"
-              >
-                Amount (in Rs)
-              </label>
-              <input
-                type="number"
-                id="amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
-                className="w-full px-3 py-2 rounded-lg bg-black/50 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-              />
-            </div>
-
-            <button
-              onClick={handleTransfer}
-              disabled={loading}
-              className={`w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-emerald-500/50 transition transform hover:scale-105 ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              {loading ? "Processing..." : "Initiate Transfer"}
-            </button>
-
-            {/* Messages */}
-            {message && (
-              <div className="text-green-400 text-center">{message}</div>
+            {showModal && (
+                <SuccessModal
+                    message={`₹${amount} transferred successfully to ${name}!`}
+                    onClose={() => {
+                        setShowModal(false);
+                        navigate("/dashboard");
+                    }}
+                />
             )}
-            {error && <div className="text-red-500 text-center">{error}</div>}
-          </div>
-
-          {/* Footer */}
-          <div className="text-center text-gray-400 text-sm">
-            Secure transfer powered by PayTM
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+            {showErrorModal && (
+                <ErrorModal
+                    message={errorMessage}
+                    onClose={() => setShowErrorModal(false)}
+                />
+            )}
+        </motion.div>
+    );
 };
