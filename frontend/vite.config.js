@@ -8,4 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  optimizeDeps: {
+    esbuildOptions: {
+      // Bun already has esbuild, don’t use the npm binary
+      define: {}
+    }
+  }
 })
+

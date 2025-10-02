@@ -1,4 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SignUp } from "./pages/SignUp";
+import { Signin } from "./pages/Signin";
+import { Dashboard } from "./pages/dashboard";
+import { Send } from "./pages/send";
+
 function App() {
 
   return (
