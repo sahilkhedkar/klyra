@@ -19,52 +19,56 @@ accountRouter.get("/balance", authMiddleware, async (req, res) => {
     }
 });
 
-
 accountRouter.post("/transfer", authMiddleware, async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+   accountRouter.post("/transfer", authMiddleware, async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    const { amount, to } = req.body; // 'to' = recipient username
+  const { amount, to } = req.body; // 'to' = recipient username
 
-    try {
-        const senderAccount = await Account.findOne({ userId: req.userId }).session(session);
-        if (!senderAccount || senderAccount.balance < amount) {
-            await session.abortTransaction();
-            return res.status(400).json({ message: "Insufficient balance" });
-        }
-
-        // Find recipient user by username
-        const recipientUser = await User.findOne({ username: to }).session(session);
-        if (!recipientUser) {
-            await session.abortTransaction();
-            return res.status(400).json({ message: "Recipient user not found" });
-        }
-
-        // Prevent sending to self
-        if (recipientUser._id.equals(req.userId)) {
-            await session.abortTransaction();
-            return res.status(400).json({ message: "Cannot transfer to yourself" });
-        }
-
-        const recipientAccount = await Account.findOne({ userId: recipientUser._id }).session(session);
-        if (!recipientAccount) {
-            await session.abortTransaction();
-            return res.status(400).json({ message: "Recipient account not found" });
-        }
-
-        // Perform transfer
-        await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
-        await Account.updateOne({ userId: recipientUser._id }, { $inc: { balance: amount } }).session(session);
-
-        await session.commitTransaction();
-        return res.json({ message: "Transfer successful" });
-
-    } catch (error) {
-        await session.abortTransaction();
-        return res.status(500).json({ message: "Something went wrong", error: error.message });
-    } finally {
-        session.endSession();
+  try {
+    // Sender's account
+    const senderAccount = await Account.findOne({ userId: req.userId }).session(session);
+    if (!senderAccount || senderAccount.balance < amount) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Insufficient balance" });
     }
+
+    // Recipient user
+    const recipientUser = await User.findOne({ to }).session(session);
+    if (!recipientUser) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Recipient user not found" });
+    }
+
+    // Prevent sending money to self
+    if (recipientUser._id.equals(req.userId)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Cannot transfer to yourself" });
+    }
+
+    // Recipient account
+    const recipientAccount = await Account.findOne({ userId: recipientUser._id }).session(session);
+    if (!recipientAccount) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Recipient account not found" });
+    }
+
+    // Perform the transfer
+    await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
+    await Account.updateOne({ userId: recipientUser._id }, { $inc: { balance: amount } }).session(session);
+
+    await session.commitTransaction();
+    return res.status(200).json({ message: "Transfer successful" });
+
+  } catch (error) {
+    await session.abortTransaction();
+    return res.status(500).json({ message: "Something went wrong", error: error.message });
+  } finally {
+    session.endSession();
+  }
 });
+});
+
 
 

@@ -1,23 +1,22 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
-export const authMiddleware = async(req,res,next) => {
-    const token = await req.headers.token;
+export const authMiddleware = (req, res, next) => {
+  try {
+    // Get token from headers
+    const token = req.headers.token;
 
-    if(!token) {
-        res.status(403).json({
-            msg: "token not provided"
-        })
+    if (!token) {
+      return res.status(401).json({ message: "Access Denied: No token provided" });
     }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    // Verify token
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
 
-        req.userId = decoded.userId
-        next();
-    } catch (error) {
-        return res.status(403).json({
-            msg: "invalid credentilas",
-            error: error
-        })
-    }
-}
+    // Attach user id to request object
+    req.userId = verified.id;
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
