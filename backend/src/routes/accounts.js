@@ -27,52 +27,44 @@ accountRouter.post("/transfer", authMiddleware, async (req, res) => {
     const { amount, to } = req.body; // 'to' = recipient username
 
     try {
-        // Sender's account
         const senderAccount = await Account.findOne({ userId: req.userId }).session(session);
         if (!senderAccount || senderAccount.balance < amount) {
             await session.abortTransaction();
             return res.status(400).json({ message: "Insufficient balance" });
         }
 
-        // Recipient user
+        // Find recipient user by username
         const recipientUser = await User.findOne({ username: to }).session(session);
         if (!recipientUser) {
             await session.abortTransaction();
             return res.status(400).json({ message: "Recipient user not found" });
         }
 
-        // Prevent sending money to self
+        // Prevent sending to self
         if (recipientUser._id.equals(req.userId)) {
             await session.abortTransaction();
             return res.status(400).json({ message: "Cannot transfer to yourself" });
         }
 
-        // Recipient account
         const recipientAccount = await Account.findOne({ userId: recipientUser._id }).session(session);
         if (!recipientAccount) {
             await session.abortTransaction();
             return res.status(400).json({ message: "Recipient account not found" });
         }
 
-        // Perform the transfer
-        await Account.updateOne(
-            { userId: req.userId },
-            { $inc: { balance: -amount } }
-        ).session(session);
-
-        await Account.updateOne(
-            { userId: recipientUser._id },
-            { $inc: { balance: amount } }
-        ).session(session);
+        // Perform transfer
+        await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
+        await Account.updateOne({ userId: recipientUser._id }, { $inc: { balance: amount } }).session(session);
 
         await session.commitTransaction();
-        res.json({ message: "Transfer successful" });
+        return res.json({ message: "Transfer successful" });
 
     } catch (error) {
         await session.abortTransaction();
-        res.status(500).json({ message: "Something went wrong", error: error.message });
+        return res.status(500).json({ message: "Something went wrong", error: error.message });
     } finally {
         session.endSession();
     }
 });
+
 

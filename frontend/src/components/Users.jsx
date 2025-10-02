@@ -1,19 +1,28 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "./Button"
 import { ButtonApp } from "./ButtonApp";
+import axios from "axios";
+import {useNavigate} from "react-router-dom"
 
 export const Users = () => {
-    const [users, setUsers] = useState([
-        { firstName: "Mandar", lastName: "Khan", _id: 1 },
-        { firstName: "Sahil", lastName: "Khedkar", _id: 2 },
-        { firstName: "Swagat", lastName: "Chand", _id: 3 }
-    ]);
+    const [users, setUsers] = useState([]);
+    const [filter, setFilter] = useState("");
+
+    useEffect(() => {
+        axios.get("http://localhost:8000/api/v1/user/bulk?filter=" + filter)
+        .then(response => {
+            setUsers(response.data.user)
+        })
+    },[filter])
 
     return (
         <>
             <div className="font-bold text-xl mb-4">Users</div>
             <div className="my-2">
                 <input 
+                    onChange={(e) => {
+                        setFilter(e.target.value)
+                    }}
                     type="text" 
                     placeholder="Search users..." 
                     className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -27,6 +36,8 @@ export const Users = () => {
 }
 
 function User({ user }) {
+
+    const navigate = useNavigate();
     return (
         <div className="flex justify-between items-center p-3 rounded-lg bg-gray-900 hover:bg-gray-800 transition border border-gray-700">
             <div className="flex items-center">
@@ -38,7 +49,9 @@ function User({ user }) {
                 </div>
             </div>
             <div>
-                <ButtonApp label={"Send Money"} />
+                <ButtonApp onClick={(e) => {
+                    navigate(`/send?id=${user._id}&name=${user.username}`)
+                }} label={"Send Money"} />
             </div>
         </div>
     )
